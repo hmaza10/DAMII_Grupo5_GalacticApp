@@ -45,6 +45,9 @@ public class Pedido {
     @JoinColumn(name = "id_zona")
     private Zona zona;
 
+    @Column(name = "horario_entrega")
+    private String horarioEntrega;
+
     @Column(name = "metodo_pago")
     private String metodoPago;
 

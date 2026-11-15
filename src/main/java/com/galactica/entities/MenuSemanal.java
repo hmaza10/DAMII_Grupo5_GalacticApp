@@ -28,7 +28,7 @@ public class MenuSemanal {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "estado")
-    private EstadoMenu estadoMenu = EstadoMenu.BORRADOR;
+    private EstadoMenu estado = EstadoMenu.BORRADOR;
 
     @Column(name = "publicado_en")
     private LocalDateTime publicadoEn;
