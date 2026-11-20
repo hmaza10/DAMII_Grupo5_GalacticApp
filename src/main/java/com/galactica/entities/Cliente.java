@@ -1,5 +1,6 @@
 package com.galactica.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -28,6 +29,10 @@ public class Cliente {
 
     @Column(name = "referencia")
     private String referencia;
+
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "fcm_token")
+    private String fcmToken;
 
     @Column(name = "activo")
     private Boolean activo = true;

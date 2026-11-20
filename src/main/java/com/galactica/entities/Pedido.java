@@ -26,6 +26,7 @@ public class Pedido {
 
     @ManyToOne
     @JoinColumn(name = "id_menu")
+    @JsonIgnoreProperties("dias")
     private MenuSemanal menuSemanal;
 
     @Column(name = "fecha_creacion")
@@ -44,6 +45,9 @@ public class Pedido {
     @ManyToOne
     @JoinColumn(name = "id_zona")
     private Zona zona;
+
+    @Column(name = "tarifa_delivery")
+    private BigDecimal tarifaDelivery = BigDecimal.ZERO;
 
     @Column(name = "horario_entrega")
     private String horarioEntrega;

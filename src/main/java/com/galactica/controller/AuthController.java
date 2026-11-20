@@ -34,7 +34,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         Usuario usuario = usuarioRepository.findByLogin(loginRequest.getLogin()).orElse(null);
-        if (usuario == null || !passwordEncoder.matches(loginRequest.getClave(), usuario.getClave())) {
+        if (usuario == null || !passwordEncoder.matches(loginRequest.getClave(), usuario.getClave())
+                || !Boolean.TRUE.equals(usuario.getActivo())) {
             return ResponseEntity.status(401).body("Credenciales invalidas");
         }
         return ResponseEntity.ok(usuario);
@@ -62,6 +63,8 @@ public class AuthController {
         usuario.setActivo(true);
         usuario.setTipo(tipoCliente);
         usuarioRepository.save(usuario);
+        cliente.setIdCliente(null);
+        cliente.setActivo(true);
 
         return ResponseEntity.ok(clienteRepository.save(cliente));
     }

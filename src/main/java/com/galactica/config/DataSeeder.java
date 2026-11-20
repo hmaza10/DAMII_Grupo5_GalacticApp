@@ -2,6 +2,7 @@ package com.galactica.config;
 
 import com.galactica.entities.*;
 import com.galactica.repository.*;
+import jakarta.transaction.Transactional;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -37,6 +38,7 @@ public class DataSeeder implements CommandLineRunner {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     @Override
     public void run(String...args) {
         if (tipoRepository.count() > 0)
@@ -160,7 +162,9 @@ public class DataSeeder implements CommandLineRunner {
 
             total = total.add(detalle.getSubtotal());
         }
-        pedido.setTotal(total);
+        BigDecimal tarifa = cliente.getZona().getTarifaDelivery();
+        pedido.setTarifaDelivery(tarifa);
+        pedido.setTotal(total.add(tarifa));
         return pedidoRepository.save(pedido);
     }
 
