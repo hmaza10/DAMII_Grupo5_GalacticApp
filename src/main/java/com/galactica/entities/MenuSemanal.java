@@ -34,6 +34,7 @@ public class MenuSemanal {
     private LocalDateTime publicadoEn;
 
     @OneToMany(mappedBy = "menuSemanal", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("fecha ASC")
     @JsonIgnoreProperties("menuSemanal")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
