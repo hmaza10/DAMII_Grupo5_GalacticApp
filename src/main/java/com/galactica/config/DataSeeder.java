@@ -26,7 +26,9 @@ public class DataSeeder implements CommandLineRunner {
     private final PedidoRepository pedidoRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public DataSeeder(TipoRepository tipoRepository, UsuarioRepository usuarioRepository, ZonaRepository zonaRepository, ClienteRepository clienteRepository, CategoriaRepository categoriaRepository, PlatoRepository platoRepository, MenuSemanalRepository menuSemanalRepository, PedidoRepository pedidoRepository, PasswordEncoder passwordEncoder) {
+    public DataSeeder(TipoRepository tipoRepository, UsuarioRepository usuarioRepository, ZonaRepository zonaRepository,
+                      ClienteRepository clienteRepository, CategoriaRepository categoriaRepository, PlatoRepository platoRepository,
+                      MenuSemanalRepository menuSemanalRepository, PedidoRepository pedidoRepository, PasswordEncoder passwordEncoder) {
         this.tipoRepository = tipoRepository;
         this.usuarioRepository = usuarioRepository;
         this.zonaRepository = zonaRepository;
@@ -49,13 +51,8 @@ public class DataSeeder implements CommandLineRunner {
         admin.setDescripcion("administrador");
         tipoRepository.save(admin);
 
-        Tipo operador = new Tipo();
-        operador.setIdTipo(2);
-        operador.setDescripcion("operador");
-        tipoRepository.save(operador);
-
         Tipo tipoCliente = new Tipo();
-        tipoCliente.setIdTipo(3);
+        tipoCliente.setIdTipo(2);
         tipoCliente.setDescripcion("cliente");
         tipoRepository.save(tipoCliente);
 
@@ -68,16 +65,6 @@ public class DataSeeder implements CommandLineRunner {
         adminUser.setActivo(true);
         adminUser.setTipo(admin);
         usuarioRepository.save(adminUser);
-
-        Usuario userOperador = new Usuario();
-        userOperador.setNombres("Usuario");
-        userOperador.setApellidos("Operador");
-        userOperador.setLogin("operador");
-        userOperador.setClave(passwordEncoder.encode("operador123"));
-        userOperador.setEmail("operador@galacticadelivery.com");
-        userOperador.setActivo(true);
-        userOperador.setTipo(operador);
-        usuarioRepository.save(userOperador);
 
         Zona z1 = nuevaZona("San Isidro", "0.00");
         Zona z2 = nuevaZona("Miraflores", "3.00");

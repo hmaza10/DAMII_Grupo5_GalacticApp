@@ -50,7 +50,6 @@ public class MenuController {
 
     private boolean esGestor(Authentication auth) {
         return auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
-                || a.getAuthority().equals("ROLE_OPERADOR"));
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 }

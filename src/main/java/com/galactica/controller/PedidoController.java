@@ -65,7 +65,6 @@ public class PedidoController {
     }
 
     private boolean esGestor(Authentication auth) {
-        return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
-        || a.getAuthority().equals("ROLE_OPERADOR"));
+        return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
     }
 }

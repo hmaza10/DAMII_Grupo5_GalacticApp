@@ -28,8 +28,6 @@ public class UsuarioDetailsService implements UserDetailsService {
         String descripcion = usuario.getTipo().getDescripcion();
         String rol = "administrador".equalsIgnoreCase(descripcion)
                 ? "ADMIN"
-                : "operador".equalsIgnoreCase(descripcion)
-                ? "OPERADOR"
                 : "CLIENTE";
 
         return org.springframework.security.core.userdetails.User.builder()
