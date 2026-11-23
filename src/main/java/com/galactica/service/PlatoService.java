@@ -75,7 +75,8 @@ public class PlatoService {
 
     @Transactional
     public Plato crear(Plato plato) {
-        Categoria categoria = validarYResolverCategoria(plato);
+        validar(plato);
+        Categoria categoria = buscarCategoria(plato);
         plato.setIdPlato(null);
         plato.setNombre(plato.getNombre().trim());
         plato.setCategoria(categoria);
@@ -85,7 +86,8 @@ public class PlatoService {
 
     @Transactional
     public Plato actualizar(Integer id, Plato datos) {
-        Categoria categoria = validarYResolverCategoria(datos);
+        validar(datos);
+        Categoria categoria = buscarCategoria(datos);
         Plato plato = obtener(id);
         plato.setNombre(datos.getNombre().trim());
         plato.setDescripcion(datos.getDescripcion());
@@ -109,28 +111,22 @@ public class PlatoService {
         return platoRepository.save(plato);
     }
 
-    private Categoria validarYResolverCategoria(Plato plato) {
-        Map<String, String> errores = new HashMap<>();
+    private void validar(Plato plato) {
         if (plato.getNombre() == null || plato.getNombre().isBlank()) {
-            errores.put("nombre", "El nombre es obligatorio");
+            throw ApiException.validacion(Map.of("nombre", "El nombre es obligatorio"));
         }
         if (plato.getPrecio() == null || plato.getPrecio().compareTo(BigDecimal.ZERO) <= 0) {
-            errores.put("precio", "El precio debe ser mayor a 0");
+            throw ApiException.validacion(Map.of("precio", "El precio debe ser mayor a 0"));
         }
+    }
 
-        Categoria categoria = null;
-        Integer idCategoria = plato.getCategoria() != null ? plato.getCategoria().getIdCategoria() : null;
-        if (idCategoria == null) {
-            errores.put("categoria", "Debe seleccionar una categoría");
-        } else {
-            categoria = categoriaRepository.findById(idCategoria).orElse(null);
-            if (categoria == null || !Boolean.TRUE.equals(categoria.getActivo())) {
-                errores.put("categoria", "La categoría no existe o esta inactiva");
-            }
+    private Categoria buscarCategoria(Plato plato) {
+        if (plato.getCategoria() == null || plato.getCategoria().getIdCategoria() == null) {
+            throw ApiException.validacion(Map.of("categoria", "Debe seleccionar una categoria"));
         }
-
-        if (!errores.isEmpty()) {
-            throw ApiException.validacion(errores);
+        Categoria categoria = categoriaRepository.findById(plato.getCategoria().getIdCategoria()).orElse(null);
+        if (categoria == null || !Boolean.TRUE.equals(categoria.getActivo())) {
+            throw ApiException.validacion(Map.of("categoria", "La categoria no existe o esta inactiva"));
         }
         return categoria;
     }
