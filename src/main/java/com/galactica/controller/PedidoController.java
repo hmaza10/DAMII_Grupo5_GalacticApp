@@ -2,8 +2,12 @@ package com.galactica.controller;
 
 import com.galactica.entities.Pedido;
 import com.galactica.service.PedidoService;
+import com.galactica.util.PedidoPdf;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,6 +53,15 @@ public class PedidoController {
     @PatchMapping("/{id}/estado")
     public Pedido cambiarEstado(@PathVariable Integer id, @RequestParam String estado) {
         return pedidoService.cambiarEstado(id, estado);
+    }
+
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> pdf(@PathVariable Integer id, Authentication auth) {
+        Pedido pedido = pedidoService.obtener(id, auth.getName(), esGestor(auth));
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=pedido-" + id + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(PedidoPdf.generar(pedido));
     }
 
     private boolean esGestor(Authentication auth) {
