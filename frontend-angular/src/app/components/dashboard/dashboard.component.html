@@ -1,4 +1,194 @@
-<div class="container mt-4">
-  <h1>Dashboard</h1>
-  <p>Panel en construcción. Aquí irán los conteos del portal.</p>
+<div class="container-fluid py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+      <h1 class="h3 mb-1">Dashboard</h1>
+      <p class="text-muted mb-0">Resumen general de GalacticAPP</p>
+    </div>
+    <div class="text-end">
+      <small class="text-muted d-block">Administrador</small>
+      <strong>{{ nombreUsuario }}</strong>
+    </div>
+  </div>
+
+  <div *ngIf="errorMensaje" class="alert alert-danger">
+    {{ errorMensaje }}
+  </div>
+
+  <div *ngIf="cargando" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="text-muted mt-3 mb-0">Cargando dashboard...</p>
+  </div>
+
+  <ng-container *ngIf="!cargando">
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body d-flex align-items-center">
+            <div class="dashboard-icon text-primary">
+              <i class="fa-solid fa-tags"></i>
+            </div>
+            <div>
+              <div class="h3 mb-0">{{ totalCategorias }}</div>
+              <small class="text-muted">Categorías</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body d-flex align-items-center">
+            <div class="dashboard-icon text-info">
+              <i class="fa-solid fa-utensils"></i>
+            </div>
+            <div>
+              <div class="h3 mb-0">{{ totalPlatos }}</div>
+              <small class="text-muted">Platos</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body d-flex align-items-center">
+            <div class="dashboard-icon text-warning">
+              <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <div>
+              <div class="h3 mb-0">{{ totalMenus }}</div>
+              <small class="text-muted">Menús</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body d-flex align-items-center">
+            <div class="dashboard-icon text-success">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+              <div class="h3 mb-0">{{ totalClientes }}</div>
+              <small class="text-muted">Clientes</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body d-flex align-items-center">
+            <div class="dashboard-icon text-danger">
+              <i class="fa-solid fa-file-lines"></i>
+            </div>
+            <div>
+              <div class="h3 mb-0">{{ totalPedidos }}</div>
+              <small class="text-muted">Pedidos</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-body d-flex align-items-center">
+            <div class="dashboard-icon text-secondary">
+              <i class="fa-solid fa-map-location-dot"></i>
+            </div>
+            <div>
+              <div class="h3 mb-0">{{ totalZonas }}</div>
+              <small class="text-muted">Zonas</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h2 class="h5 mb-0">Últimos pedidos</h2>
+            <a routerLink="/pedidos" class="btn btn-sm btn-outline-primary">
+              Ver todos
+            </a>
+          </div>
+
+          <div class="table-responsive" *ngIf="ultimosPedidos.length > 0; else sinPedidos">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+              <tr>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Estado</th>
+                <th>Total</th>
+                <th>Fecha</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr *ngFor="let pedido of ultimosPedidos">
+                <td>#{{ pedido.idPedido }}</td>
+                <td>{{ nombreCliente(pedido) }}</td>
+                <td>
+                    <span
+                      class="badge"
+                      [ngClass]="{
+                        'bg-warning text-dark': pedido.estado === 'PENDIENTE',
+                        'bg-primary': pedido.estado === 'CONFIRMADO',
+                        'bg-info text-dark': pedido.estado === 'EN_PREPARACION',
+                        'bg-secondary': pedido.estado === 'EN_RUTA',
+                        'bg-success': pedido.estado === 'ENTREGADO',
+                        'bg-danger': pedido.estado === 'CANCELADO'
+                      }"
+                    >
+                      {{ pedido.estado }}
+                    </span>
+                </td>
+                <td>S/ {{ pedido.total | number:'1.2-2' }}</td>
+                <td>{{ pedido.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <ng-template #sinPedidos>
+            <div class="card-body text-muted">
+              No hay pedidos recientes.
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-header bg-white">
+            <h2 class="h5 mb-0">Accesos rápidos</h2>
+          </div>
+
+          <div class="list-group list-group-flush">
+            <a routerLink="/categorias" class="list-group-item list-group-item-action">
+              <i class="fa-solid fa-tags me-2 text-primary"></i> Categorías
+            </a>
+            <a routerLink="/platos" class="list-group-item list-group-item-action">
+              <i class="fa-solid fa-utensils me-2 text-info"></i> Platos
+            </a>
+            <a routerLink="/menus" class="list-group-item list-group-item-action">
+              <i class="fa-solid fa-calendar-days me-2 text-warning"></i> Menús
+            </a>
+            <a routerLink="/clientes" class="list-group-item list-group-item-action">
+              <i class="fa-solid fa-users me-2 text-success"></i> Clientes
+            </a>
+            <a routerLink="/pedidos" class="list-group-item list-group-item-action">
+              <i class="fa-solid fa-file-lines me-2 text-danger"></i> Pedidos
+            </a>
+            <a routerLink="/zonas" class="list-group-item list-group-item-action">
+              <i class="fa-solid fa-map-location-dot me-2 text-secondary"></i> Zonas
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
 </div>
