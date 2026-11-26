@@ -1,4 +1,357 @@
-<div class="container mt-4">
-  <h1>Pedidos</h1>
-  <p>Pantalla en construcción.</p>
+<div class="container-fluid py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+      <h1 class="h3 mb-1">Pedidos</h1>
+      <p class="text-muted mb-0">Consulta y gestión de los pedidos de Galáctica Delivery</p>
+    </div>
+    <div class="text-end">
+      <small class="text-muted d-block">Total filtrado</small>
+      <strong>{{ totalElements }}</strong>
+    </div>
+  </div>
+
+  <div *ngIf="mensajeExito" class="alert alert-success d-flex justify-content-between align-items-center" role="status">
+    <span><i class="fa-solid fa-circle-check me-2"></i>{{ mensajeExito }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar mensaje" (click)="mensajeExito = ''"></button>
+  </div>
+
+  <div *ngIf="mensajeError" class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ mensajeError }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar mensaje" (click)="mensajeError = ''"></button>
+  </div>
+
+  <div *ngIf="errorAux" class="alert alert-warning d-flex justify-content-between align-items-center">
+    <span>{{ errorAux }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar mensaje" (click)="errorAux = ''"></button>
+  </div>
+
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-white">
+      <h2 class="h6 mb-0"><i class="fa-solid fa-filter me-2 text-primary"></i>Filtros de búsqueda</h2>
+    </div>
+    <div class="card-body">
+      <div class="row g-3 align-items-end">
+        <div class="col-sm-6 col-lg-2">
+          <label for="filtroEstado" class="form-label small fw-semibold">Estado</label>
+          <select id="filtroEstado" class="form-select form-select-sm" [(ngModel)]="filtros.estado">
+            <option [ngValue]="''">Todos</option>
+            <option *ngFor="let estado of estados" [ngValue]="estado">{{ estado }}</option>
+          </select>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+          <label for="buscarCliente" class="form-label small fw-semibold">Buscar cliente</label>
+          <input
+            id="buscarCliente"
+            type="search"
+            class="form-control form-control-sm"
+            placeholder="Nombre del cliente"
+            [(ngModel)]="busquedaCliente"
+            (input)="buscarCliente()"
+            (keydown.enter)="aplicarFiltros()"
+          />
+          <select class="form-select form-select-sm mt-2" aria-label="Cliente" [(ngModel)]="filtros.idCliente">
+            <option [ngValue]="null">Todos los clientes</option>
+            <option *ngFor="let cliente of clientes" [ngValue]="cliente.idCliente">
+              {{ nombreClienteLista(cliente) }}
+            </option>
+          </select>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+          <label for="filtroZona" class="form-label small fw-semibold">Zona</label>
+          <select id="filtroZona" class="form-select form-select-sm" [(ngModel)]="filtros.idZona">
+            <option [ngValue]="null">Todas</option>
+            <option *ngFor="let zona of zonas" [ngValue]="zona.idZona">{{ zona.nombre }}</option>
+          </select>
+        </div>
+        <div class="col-sm-6 col-lg-2">
+          <label for="fechaDesde" class="form-label small fw-semibold">Desde</label>
+          <input id="fechaDesde" type="date" class="form-control form-control-sm" [(ngModel)]="filtros.fechaDesde" />
+        </div>
+        <div class="col-sm-6 col-lg-2">
+          <label for="fechaHasta" class="form-label small fw-semibold">Hasta</label>
+          <input id="fechaHasta" type="date" class="form-control form-control-sm" [(ngModel)]="filtros.fechaHasta" />
+        </div>
+        <div class="col-12 col-lg-1 d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-primary w-100" (click)="aplicarFiltros()">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary w-100" (click)="limpiarFiltros()" aria-label="Limpiar filtros">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">Listado de pedidos</h2>
+      <small class="text-muted">Ordenados por fecha más reciente</small>
+    </div>
+
+    <div *ngIf="errorLista" class="alert alert-danger m-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ errorLista }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarPedidos()">Reintentar</button>
+    </div>
+
+    <div *ngIf="cargando" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="text-muted mt-3 mb-0">Cargando pedidos...</p>
+    </div>
+
+    <div class="table-responsive" *ngIf="!cargando && !errorLista && pedidos.length > 0; else sinPedidos">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Semana</th>
+            <th>Zona</th>
+            <th>Dirección</th>
+            <th>Horario</th>
+            <th>Total</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let pedido of pedidos">
+            <td class="fw-bold">#{{ pedido.idPedido }}</td>
+            <td>{{ nombreCliente(pedido) }}</td>
+            <td class="text-nowrap">{{ pedido.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="text-nowrap">{{ semana(pedido) }}</td>
+            <td>{{ pedido.zona?.nombre || '-' }}</td>
+            <td>{{ pedido.direccionEntrega || '-' }}</td>
+            <td class="text-nowrap">{{ pedido.horarioEntrega || '-' }}</td>
+            <td class="text-nowrap">S/ {{ pedido.total | number:'1.2-2' }}</td>
+            <td>
+              <span class="badge" [ngClass]="claseEstado(pedido.estado)">
+                {{ pedido.estado || 'PENDIENTE' }}
+              </span>
+            </td>
+            <td class="text-nowrap">
+              <div class="d-flex flex-wrap gap-1">
+                <button type="button" class="btn btn-sm btn-outline-primary" (click)="verDetalle(pedido)">
+                  <i class="fa-solid fa-eye"></i> Ver
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  *ngFor="let estado of estadosSiguientes(pedido.estado)"
+                  [ngClass]="claseTransicion(estado)"
+                  [disabled]="procesandoEstadoId === pedido.idPedido"
+                  (click)="cambiarEstado(pedido, estado)"
+                >
+                  {{ estado }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  [disabled]="descargandoId === pedido.idPedido"
+                  (click)="descargarPdf(pedido)"
+                  aria-label="Descargar PDF"
+                >
+                  <span *ngIf="descargandoId === pedido.idPedido; else iconoPdf">
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                  </span>
+                  <ng-template #iconoPdf><i class="fa-solid fa-file-pdf"></i></ng-template>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #sinPedidos>
+      <div *ngIf="!cargando && !errorLista" class="text-center text-muted py-5">
+        <i class="fa-regular fa-folder-open fa-2x mb-3 d-block"></i>
+        No hay pedidos que coincidan con los filtros seleccionados.
+      </div>
+    </ng-template>
+
+    <div
+      class="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2"
+      *ngIf="!cargando && totalElements > 0"
+    >
+      <small class="text-muted">
+        Página {{ page + 1 }} de {{ totalPages }} · {{ totalElements }} pedidos
+      </small>
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-secondary" [disabled]="page === 0" (click)="irPagina(page - 1)">
+          Anterior
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          [disabled]="page >= totalPages - 1"
+          (click)="irPagina(page + 1)"
+        >
+          Siguiente
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-oscuro" *ngIf="detalle || cargandoDetalle || errorDetalle" (click)="cerrarDetalle()">
+    <div class="modal-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal-header d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h5 mb-0">Detalle del pedido #{{ detalle?.idPedido }}</h2>
+          <small class="text-muted">Información completa del pedido</small>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" aria-label="Cerrar detalle" (click)="cerrarDetalle()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="cargandoDetalle" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted mt-3 mb-0">Cargando detalle...</p>
+        </div>
+
+        <div *ngIf="errorDetalle" class="alert alert-danger">{{ errorDetalle }}</div>
+
+        <ng-container *ngIf="detalle">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            <span class="badge" [ngClass]="claseEstado(detalle.estado)">{{ detalle.estado || 'PENDIENTE' }}</span>
+            <span class="text-muted small">
+              Registrado el {{ detalle.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}
+            </span>
+          </div>
+
+          <h3 class="h6 mb-2">Cliente</h3>
+          <div class="row g-2 detalle-grid mb-3">
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Nombre</small>
+              <strong>{{ nombreCliente(detalle) }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Login</small>
+              <strong>{{ detalle.cliente?.usuario?.login || '-' }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Correo</small>
+              <strong>{{ detalle.cliente?.usuario?.email || '-' }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Teléfono</small>
+              <strong>{{ detalle.cliente?.telefono || '-' }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Dirección registrada</small>
+              <strong>{{ detalle.cliente?.direccion || '-' }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Zona del cliente</small>
+              <strong>{{ detalle.cliente?.zona?.nombre || '-' }}</strong>
+            </div>
+          </div>
+
+          <h3 class="h6 mb-2">Entrega</h3>
+          <div class="row g-2 detalle-grid mb-3">
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Dirección de entrega</small>
+              <strong>{{ detalle.direccionEntrega || '-' }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Zona</small>
+              <strong>{{ detalle.zona?.nombre || '-' }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Tarifa de delivery</small>
+              <strong>S/ {{ detalle.tarifaDelivery | number:'1.2-2' }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Horario</small>
+              <strong>{{ detalle.horarioEntrega || '-' }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Semana</small>
+              <strong>{{ semana(detalle) }}</strong>
+            </div>
+            <div class="col-sm-6 col-md-4">
+              <small class="text-muted d-block">Método de pago</small>
+              <strong>{{ detalle.metodoPago || '-' }}</strong>
+            </div>
+          </div>
+
+          <h3 class="h6 mb-2">Platos por día</h3>
+          <div class="table-responsive mb-3">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Día</th>
+                  <th>Fecha</th>
+                  <th>Plato</th>
+                  <th>Cantidad</th>
+                  <th>Precio unitario</th>
+                  <th>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of detalle.detalles">
+                  <td><strong>{{ item.diaSemana || '-' }}</strong></td>
+                  <td class="text-nowrap">{{ item.fechaConsumo | date:'dd/MM/yyyy' }}</td>
+                  <td>{{ item.plato?.nombre || '-' }}</td>
+                  <td>{{ item.cantidad ?? 1 }}</td>
+                  <td>S/ {{ item.precioUnitario | number:'1.2-2' }}</td>
+                  <td>S/ {{ item.subtotal | number:'1.2-2' }}</td>
+                </tr>
+                <tr *ngIf="!detalle.detalles || detalle.detalles.length === 0">
+                  <td colspan="6" class="text-center text-muted">El pedido no tiene platos registrados.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <small class="text-muted d-block">Observaciones</small>
+              <span>{{ observaciones(detalle) }}</span>
+            </div>
+            <div class="col-md-6">
+              <div class="totales-card p-3">
+                <div class="d-flex justify-content-between">
+                  <span>Subtotal platos</span>
+                  <strong>S/ {{ subtotalPlatos(detalle) | number:'1.2-2' }}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <span>Delivery</span>
+                  <strong>S/ {{ detalle.tarifaDelivery | number:'1.2-2' }}</strong>
+                </div>
+                <div class="d-flex justify-content-between total-final mt-2 pt-2">
+                  <span>Total del pedido</span>
+                  <strong>S/ {{ detalle.total | number:'1.2-2' }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            <button
+              type="button"
+              class="btn btn-sm"
+              *ngFor="let estado of estadosSiguientes(detalle.estado)"
+              [ngClass]="claseTransicion(estado)"
+              [disabled]="procesandoEstadoId === detalle.idPedido"
+              (click)="cambiarEstado(detalle, estado)"
+            >
+              {{ estado }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-danger"
+              [disabled]="descargandoId === detalle.idPedido"
+              (click)="descargarPdf(detalle)"
+            >
+              <i class="fa-solid fa-file-pdf me-2"></i>Descargar comprobante
+            </button>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </div>
 </div>

@@ -77,7 +77,8 @@ public class PedidoPdf {
             agregarFilaInfo(tablaInfo, "Zona:", pedido.getZona() == null ? "-" : nv1(pedido.getZona().getNombre()));
             agregarFilaInfo(tablaInfo, "Horario de entrega:", nv1(pedido.getHorarioEntrega()));
             agregarFilaInfo(tablaInfo, "Método de pago:", nv1(pedido.getMetodoPago()));
-            agregarFilaInfo(tablaInfo, "Observaciones:", pedido.getObservaciones().isBlank() ? "-" : pedido.getObservaciones());
+            agregarFilaInfo(tablaInfo, "Observaciones:", pedido.getObservaciones() == null || pedido.getObservaciones().isBlank()
+                    ? "-" : pedido.getObservaciones());
             documento.add(tablaInfo);
 
             documento.add(new Paragraph(" ", FUENTE_TEXTO));

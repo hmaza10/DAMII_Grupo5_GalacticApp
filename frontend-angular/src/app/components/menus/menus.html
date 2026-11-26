@@ -1,4 +1,380 @@
-<div class="container mt-4">
-  <h1>Menus</h1>
-  <p>Pantalla en construcción.</p>
+<div class="container-fluid py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+      <h1 class="h3 mb-1">Menús semanales</h1>
+      <p class="text-muted mb-0">Planificación de lunes a viernes de Galáctica Delivery</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="nuevoMenu()">
+      <i class="fa-solid fa-plus me-2"></i>Nuevo menú
+    </button>
+  </div>
+
+  <div *ngIf="mensajeExito" class="alert alert-success d-flex justify-content-between align-items-center" role="status">
+    <span><i class="fa-solid fa-circle-check me-2"></i>{{ mensajeExito }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar mensaje" (click)="mensajeExito = ''"></button>
+  </div>
+
+  <div *ngIf="errorDetalle" class="alert alert-danger d-flex justify-content-between align-items-center">
+    <span>{{ errorDetalle }}</span>
+    <button type="button" class="btn-close" aria-label="Cerrar mensaje" (click)="errorDetalle = ''"></button>
+  </div>
+
+  <div class="card shadow-sm border-0 mb-4" *ngIf="formularioVisible">
+    <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h2 class="h5 mb-0">
+          {{ modo === 'crear' ? 'Nuevo menú semanal' : 'Editar menú semanal' }}
+        </h2>
+        <small class="text-muted">Los cambios se guardan primero como borrador</small>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <span class="badge" [ngClass]="claseEstado(menuEstado)">{{ menuEstado }}</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary" aria-label="Cerrar formulario" (click)="cerrarFormulario()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div *ngIf="cargandoFormulario" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-muted mt-3 mb-0">Cargando menú...</p>
+      </div>
+
+      <ng-container *ngIf="!cargandoFormulario">
+        <div *ngIf="errorFormulario" class="alert alert-danger">{{ errorFormulario }}</div>
+
+        <div *ngIf="erroresValidacion.length > 0" class="alert alert-warning">
+          <div class="fw-semibold mb-1">Revise los siguientes puntos:</div>
+          <ul class="mb-0 ps-3">
+            <li *ngFor="let error of erroresValidacion">{{ error }}</li>
+          </ul>
+        </div>
+
+        <div *ngIf="cargandoPlatos" class="text-muted small mb-3">
+          <i class="fa-solid fa-spinner fa-spin me-1"></i>Cargando platos disponibles...
+        </div>
+
+        <div *ngIf="errorPlatos" class="alert alert-danger d-flex justify-content-between align-items-center gap-2">
+          <span>{{ errorPlatos }}</span>
+          <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarPlatos()">Reintentar</button>
+        </div>
+
+        <fieldset [disabled]="guardando || publicando || menuEstado === 'PUBLICADO'">
+          <div class="row g-3 mb-4">
+            <div class="col-md-5">
+              <label for="fechaInicio" class="form-label fw-semibold">Fecha de inicio de semana</label>
+              <input
+                id="fechaInicio"
+                name="fechaInicio"
+                type="date"
+                class="form-control"
+                [(ngModel)]="fechaInicio"
+                (ngModelChange)="marcarCambio()"
+              />
+              <div class="form-text">Debe iniciar un lunes. El viernes se calcula automáticamente.</div>
+            </div>
+            <div class="col-md-7">
+              <div class="semana-resumen h-100 d-flex flex-column justify-content-center">
+                <small class="text-muted">Semana seleccionada</small>
+                <strong *ngIf="fechaLocal(fechaInicio); else sinSemana">
+                  {{ fechaLocal(fechaInicio) | date:'dd/MM/yyyy' }} — {{ fechaDia(4) | date:'dd/MM/yyyy' }}
+                </strong>
+                <ng-template #sinSemana>
+                  <strong class="text-muted">Sin seleccionar</strong>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12" *ngFor="let dia of dias; let i = index">
+              <div class="dia-card">
+                <div class="dia-card-header d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="dia-numero">{{ i + 1 }}</span>
+                    <strong>{{ etiquetaDia(i) }}</strong>
+                    <small class="text-muted">{{ fechaDia(i) | date:'dd/MM/yyyy' }}</small>
+                  </div>
+                  <span
+                    class="badge"
+                    [ngClass]="dia.opcion1 !== null && dia.opcion2 !== null && dia.opcion1 !== dia.opcion2 ? 'bg-success' : 'bg-warning text-dark'"
+                  >
+                    {{ dia.opcion1 !== null && dia.opcion2 !== null && dia.opcion1 !== dia.opcion2 ? 'Completo' : 'Incompleto' }}
+                  </span>
+                </div>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label small text-muted" [attr.for]="'opcion1-' + i">Opción 1</label>
+                    <select
+                      class="form-select"
+                      [attr.id]="'opcion1-' + i"
+                      name="opcion1-{{ i }}"
+                      [(ngModel)]="dia.opcion1"
+                      (ngModelChange)="marcarCambio()"
+                    >
+                      <option [ngValue]="null">Seleccione un plato</option>
+                      <option *ngFor="let plato of platos" [ngValue]="plato.idPlato">
+                        {{ plato.nombre }} · S/ {{ plato.precio | number:'1.2-2' }} ·
+                        {{ plato.activo ? 'Disponible' : 'No disponible' }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small text-muted" [attr.for]="'opcion2-' + i">Opción 2</label>
+                    <select
+                      class="form-select"
+                      [attr.id]="'opcion2-' + i"
+                      name="opcion2-{{ i }}"
+                      [(ngModel)]="dia.opcion2"
+                      (ngModelChange)="marcarCambio()"
+                    >
+                      <option [ngValue]="null">Seleccione un plato</option>
+                      <option *ngFor="let plato of platos" [ngValue]="plato.idPlato">
+                        {{ plato.nombre }} · S/ {{ plato.precio | number:'1.2-2' }} ·
+                        {{ plato.activo ? 'Disponible' : 'No disponible' }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="platos-elegidos mt-2" *ngIf="platoPorId(dia.opcion1) || platoPorId(dia.opcion2)">
+                  <span *ngIf="platoPorId(dia.opcion1) as opcion1">
+                    <i class="fa-solid fa-circle-check text-success me-1"></i>
+                    {{ opcion1.nombre }} · S/ {{ opcion1.precio | number:'1.2-2' }}
+                  </span>
+                  <span class="ms-3" *ngIf="platoPorId(dia.opcion2) as opcion2">
+                    <i class="fa-solid fa-circle-check text-success me-1"></i>
+                    {{ opcion2.nombre }} · S/ {{ opcion2.precio | number:'1.2-2' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="resumen-card mt-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <h3 class="h6 mb-0">Resumen del menú semanal</h3>
+              <small class="text-muted">{{ diasCompletos }} de 5 días completos</small>
+            </div>
+            <div class="row g-2 mt-2">
+              <div class="col-sm-6 col-lg-4">
+                <small class="text-muted d-block">Opción 1 · total de 5 días</small>
+                <strong>S/ {{ totalOpcion1 | number:'1.2-2' }}</strong>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <small class="text-muted d-block">Días con dos opciones</small>
+                <strong>{{ diasCompletos }} / 5</strong>
+              </div>
+            </div>
+            <ul class="list-unstyled resumen-lista mt-3 mb-0">
+              <li *ngFor="let dia of dias; let i = index">
+                <strong>{{ etiquetaDia(i) }}:</strong>
+                {{ platoPorId(dia.opcion1)?.nombre || 'Sin seleccionar' }}
+                <span class="text-muted">/</span>
+                {{ platoPorId(dia.opcion2)?.nombre || 'Sin seleccionar' }}
+              </li>
+            </ul>
+          </div>
+        </fieldset>
+
+        <div class="d-flex flex-wrap justify-content-end gap-2 mt-4">
+          <button type="button" class="btn btn-outline-secondary" (click)="cerrarFormulario()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-success"
+            [disabled]="guardando || publicando || menuEstado === 'PUBLICADO'"
+            (click)="guardarBorrador()"
+          >
+            <span *ngIf="guardando">Guardando...</span>
+            <span *ngIf="!guardando"><i class="fa-solid fa-floppy-disk me-2"></i>Guardar borrador</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="!puedePublicar || guardando || publicando"
+            (click)="publicarMenu()"
+          >
+            <span *ngIf="publicando">Publicando...</span>
+            <span *ngIf="!publicando"><i class="fa-solid fa-paper-plane me-2"></i>Publicar menú</span>
+          </button>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <h2 class="h5 mb-0">Menús registrados</h2>
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <label for="filtroEstado" class="form-label small text-muted mb-0">Estado</label>
+        <select
+          id="filtroEstado"
+          class="form-select form-select-sm w-auto"
+          [(ngModel)]="filtroEstado"
+          (change)="aplicarFiltro()"
+        >
+          <option [ngValue]="''">Todos</option>
+          <option [ngValue]="'BORRADOR'">Borradores</option>
+          <option [ngValue]="'PUBLICADO'">Publicados</option>
+        </select>
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="filtroEstado = ''; aplicarFiltro()">
+          Limpiar
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="errorLista" class="alert alert-danger m-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <span><i class="fa-solid fa-triangle-exclamation me-2"></i>{{ errorLista }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="cargarMenus()">Reintentar</button>
+    </div>
+
+    <div *ngIf="cargandoLista" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="text-muted mt-3 mb-0">Cargando menús...</p>
+    </div>
+
+    <div class="table-responsive" *ngIf="!cargandoLista && !errorLista && menus.length > 0; else sinMenus">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Menú</th>
+            <th>Semana</th>
+            <th>Días</th>
+            <th>Estado</th>
+            <th>Publicado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let menu of menus">
+            <td>#{{ menu.idMenu }}</td>
+            <td class="text-nowrap">
+              {{ fechaLocal(menu.fechaInicio) | date:'dd/MM/yyyy' }}
+              <span class="text-muted">al</span>
+              {{ fechaLocal(menu.fechaFin) | date:'dd/MM/yyyy' }}
+            </td>
+            <td>{{ diasCompletosDe(menu) }} / 5</td>
+            <td>
+              <span class="badge" [ngClass]="claseEstado(menu.estado)">
+                {{ menu.estado || 'BORRADOR' }}
+              </span>
+            </td>
+            <td class="text-nowrap">{{ menu.publicadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="text-nowrap">
+              <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="verDetalle(menu)">
+                <i class="fa-solid fa-eye"></i> Ver
+              </button>
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-warning"
+                *ngIf="menu.estado !== 'PUBLICADO'"
+                (click)="editarMenu(menu)"
+              >
+                <i class="fa-solid fa-pen"></i> Editar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <ng-template #sinMenus>
+      <div *ngIf="!cargandoLista && !errorLista" class="text-center text-muted py-5">
+        <i class="fa-regular fa-calendar-xmark fa-2x mb-3 d-block"></i>
+        No hay menús registrados con este filtro.
+      </div>
+    </ng-template>
+
+    <div
+      class="card-footer bg-white d-flex flex-wrap justify-content-between align-items-center gap-2"
+      *ngIf="!cargandoLista && totalElements > 0"
+    >
+      <small class="text-muted">
+        Página {{ page + 1 }} de {{ totalPages }} · {{ totalElements }} menús
+      </small>
+      <div class="btn-group btn-group-sm">
+        <button type="button" class="btn btn-outline-secondary" [disabled]="page === 0" (click)="irPagina(page - 1)">
+          Anterior
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          [disabled]="page >= totalPages - 1"
+          (click)="irPagina(page + 1)"
+        >
+          Siguiente
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-oscuro" *ngIf="detalle || cargandoDetalle" (click)="cerrarDetalle()">
+    <div class="modal-panel" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <div class="modal-header d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h5 mb-0">Detalle del menú #{{ detalle?.idMenu }}</h2>
+          <small class="text-muted">Consulta de la semana programada</small>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" aria-label="Cerrar detalle" (click)="cerrarDetalle()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div *ngIf="cargandoDetalle" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status"></div>
+          <p class="text-muted mt-3 mb-0">Cargando detalle...</p>
+        </div>
+
+        <ng-container *ngIf="detalle">
+          <div class="d-flex flex-wrap gap-3 mb-3">
+            <span class="badge" [ngClass]="claseEstado(detalle.estado)">{{ detalle.estado || 'BORRADOR' }}</span>
+            <span class="text-muted">
+              {{ fechaLocal(detalle.fechaInicio) | date:'dd/MM/yyyy' }} —
+              {{ fechaLocal(detalle.fechaFin) | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Día</th>
+                  <th>Fecha</th>
+                  <th>Opción 1</th>
+                  <th>Opción 2</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let dia of detalle.dias; let i = index">
+                  <td><strong>{{ dia.diaSemana || etiquetaDia(i) }}</strong></td>
+                  <td class="text-nowrap">{{ fechaLocal(dia.fecha) | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    {{ dia.opcion1?.nombre || '-' }}
+                    <small class="text-muted" *ngIf="dia.opcion1?.precio">
+                      S/ {{ dia.opcion1?.precio | number:'1.2-2' }}
+                    </small>
+                  </td>
+                  <td>
+                    {{ dia.opcion2?.nombre || '-' }}
+                    <small class="text-muted" *ngIf="dia.opcion2?.precio">
+                      S/ {{ dia.opcion2?.precio | number:'1.2-2' }}
+                    </small>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-3 text-muted small" *ngIf="detalle.publicadoEn">
+            Publicado el {{ detalle.publicadoEn | date:'dd/MM/yyyy HH:mm' }}
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </div>
 </div>
