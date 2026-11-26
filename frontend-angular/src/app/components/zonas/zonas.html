@@ -1,4 +1,114 @@
 <div class="container mt-4">
-  <h1>Zonas</h1>
-  <p>Pantalla en construcción.</p>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h1 class="h3 mb-1">Zonas</h1>
+      <p class="text-muted mb-0">Gestiona las zonas de entrega y sus tarifas.</p>
+    </div>
+    <button type="button" class="btn btn-primary" (click)="abrirNueva()">
+      <i class="fa-solid fa-plus me-2"></i>Nueva zona
+    </button>
+  </div>
+
+  <div class="card shadow-sm mb-3">
+    <div class="card-body d-flex gap-2 align-items-end flex-wrap">
+      <div class="flex-grow-1">
+        <label for="buscarZona" class="form-label mb-1">Buscar por nombre</label>
+        <input id="buscarZona" name="buscarZona" class="form-control"
+               placeholder="Ej. Centro" [(ngModel)]="texto" (keyup.enter)="buscar()">
+      </div>
+      <button type="button" class="btn btn-outline-primary" (click)="buscar()">
+        <i class="fa-solid fa-magnifying-glass me-2"></i>Buscar
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="limpiar()">
+        <i class="fa-solid fa-eraser me-2"></i>Limpiar
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div *ngIf="cargando" class="p-4 text-center text-muted">Cargando zonas...</div>
+
+      <table *ngIf="!cargando" class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Tarifa de delivery</th>
+            <th>Estado</th>
+            <th class="text-end">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let zona of zonas">
+            <td>{{ zona.idZona }}</td>
+            <td class="fw-semibold">{{ zona.nombre }}</td>
+            <td>S/ {{ zona.tarifaDelivery | number:'1.2-2' }}</td>
+            <td>
+              <span class="badge" [class.bg-success]="zona.activo" [class.bg-secondary]="!zona.activo">
+                {{ zona.activo ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+            <td class="text-end">
+              <button type="button" class="btn btn-sm btn-outline-primary me-1"
+                      (click)="abrirEditar(zona)">
+                <i class="fa-solid fa-pen"></i>
+              </button>
+              <button type="button" class="btn btn-sm" [class.btn-outline-success]="!zona.activo"
+                      [class.btn-outline-warning]="zona.activo" (click)="cambiarEstado(zona)">
+                <i class="fa-solid" [class.fa-toggle-on]="zona.activo" [class.fa-toggle-off]="!zona.activo"></i>
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="zonas.length === 0">
+            <td colspan="5" class="text-center text-muted py-4">No hay zonas para mostrar.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card-footer d-flex justify-content-between align-items-center" *ngIf="!cargando">
+      <span class="text-muted small">Total: {{ totalElementos }}</span>
+      <div class="d-flex align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                [disabled]="pagina === 0" (click)="irPagina(-1)">Anterior</button>
+        <span class="small">Página {{ pagina + 1 }} de {{ totalPaginas || 1 }}</span>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                [disabled]="pagina + 1 >= totalPaginas" (click)="irPagina(1)">Siguiente</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-backdrop-custom" *ngIf="modalAbierto" (click)="cerrarModal()">
+  <div class="modal-card card shadow" (click)="$event.stopPropagation()">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="h5 m-0">{{ esEdicion ? 'Editar zona' : 'Nueva zona' }}</h2>
+      <button type="button" class="btn-close" aria-label="Cerrar" (click)="cerrarModal()"></button>
+    </div>
+    <form (submit)="$event.preventDefault(); guardar()" novalidate>
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="nombreZona" class="form-label">Nombre</label>
+          <input id="nombreZona" name="nombreZona" class="form-control"
+                 [(ngModel)]="zonaForm.nombre" required>
+        </div>
+        <div class="mb-3">
+          <label for="tarifaZona" class="form-label">Tarifa de delivery</label>
+          <input id="tarifaZona" name="tarifaZona" type="number" step="0.01" min="0"
+                 class="form-control" [(ngModel)]="zonaForm.tarifaDelivery" required>
+        </div>
+      </div>
+      <div class="card-footer d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary" (click)="cerrarModal()">Cancelar</button>
+        <button type="submit" class="btn btn-primary" [disabled]="guardando">
+          {{ guardando ? 'Guardando...' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </div>
 </div>

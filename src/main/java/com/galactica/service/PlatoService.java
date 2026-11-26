@@ -75,7 +75,7 @@ public class PlatoService {
 
     @Transactional
     public Plato crear(Plato plato) {
-        validar(plato);
+        validar(plato, null);
         Categoria categoria = buscarCategoria(plato);
         plato.setIdPlato(null);
         plato.setNombre(plato.getNombre().trim());
@@ -86,7 +86,7 @@ public class PlatoService {
 
     @Transactional
     public Plato actualizar(Integer id, Plato datos) {
-        validar(datos);
+        validar(datos, id);
         Categoria categoria = buscarCategoria(datos);
         Plato plato = obtener(id);
         plato.setNombre(datos.getNombre().trim());
@@ -111,12 +111,18 @@ public class PlatoService {
         return platoRepository.save(plato);
     }
 
-    private void validar(Plato plato) {
+    private void validar(Plato plato, Integer idActual) {
         if (plato.getNombre() == null || plato.getNombre().isBlank()) {
             throw ApiException.validacion(Map.of("nombre", "El nombre es obligatorio"));
         }
         if (plato.getPrecio() == null || plato.getPrecio().compareTo(BigDecimal.ZERO) <= 0) {
             throw ApiException.validacion(Map.of("precio", "El precio debe ser mayor a 0"));
+        }
+        String nombre = plato.getNombre().trim();
+        boolean repetido = platoRepository.findByNombreContainingIgnoreCaseAndActivoTrue(nombre).stream()
+                .anyMatch(p -> p.getNombre().equalsIgnoreCase(nombre) && !p.getIdPlato().equals(idActual));
+        if (repetido) {
+            throw ApiException.validacion(Map.of("nombre", "Ya existe un plato activo con ese nombre"));
         }
     }
 

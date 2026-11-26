@@ -49,7 +49,7 @@ public class CategoriaService {
 
     @Transactional
     public Categoria crear(Categoria categoria) {
-        validar(categoria);
+        validar(categoria, null);
         categoria.setIdCategoria(null);
         categoria.setNombre(categoria.getNombre().trim());
         categoria.setActivo(true);
@@ -58,7 +58,7 @@ public class CategoriaService {
 
     @Transactional
     public Categoria actualizar(Integer id, Categoria datos) {
-        validar(datos);
+        validar(datos, id);
         Categoria categoria = obtener(id);
         categoria.setNombre(datos.getNombre().trim());
         categoria.setDescripcion(datos.getDescripcion());
@@ -82,10 +82,17 @@ public class CategoriaService {
         return categoriaRepository.save(categoria);
     }
 
-    private void validar(Categoria categoria) {
+    private void validar(Categoria categoria, Integer idActual) {
         Map<String, String> errores = new HashMap<>();
         if (categoria.getNombre() == null || categoria.getNombre().isBlank()) {
             errores.put("nombre", "El nombre es obligatorio");
+        } else {
+            String nombre = categoria.getNombre().trim();
+            boolean repetido = categoriaRepository.findByNombreContainingIgnoreCaseAndActivoTrue(nombre).stream()
+                    .anyMatch(c -> c.getNombre().equalsIgnoreCase(nombre) && !c.getIdCategoria().equals(idActual));
+            if (repetido) {
+                errores.put("nombre", "Ya existe una categoria activa con ese nombre");
+            }
         }
         if (!errores.isEmpty()) {
             throw ApiException.validacion(errores);

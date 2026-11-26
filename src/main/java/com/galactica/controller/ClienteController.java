@@ -20,6 +20,11 @@ public class ClienteController {
         this.clienteService = clienteService;
     }
 
+    @PostMapping
+    public Cliente crear(@RequestBody Cliente datos) {
+        return clienteService.registrar(datos);
+    }
+
     @GetMapping("/me")
     public Cliente miPerfil(Authentication auth) {
         return clienteService.perfil(auth.getName());
