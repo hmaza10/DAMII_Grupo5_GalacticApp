@@ -61,6 +61,9 @@ public class ClienteService {
         if (vacio(u.getEmail()) || !EMAIL.matcher(u.getEmail().trim()).matches()) {
             errores.put("email", "Ingrese un correo válido");
         }
+        if (vacio(u.getClave())) {
+            errores.put("clave", "La clave es obligatoria");
+        }
         validarDatosEntrega(datos, errores);
         Zona zona = resolverZona(datos, errores);
         if (!errores.isEmpty()) {
@@ -223,7 +226,7 @@ public class ClienteService {
                 usuario.setNombres(du.getNombres().trim());
             }
             if (du.getApellidos() != null) {
-                usuario.setEmail(du.getApellidos().trim());
+                usuario.setApellidos(du.getApellidos().trim());
             }
             if (du.getEmail() != null) {
                 usuario.setEmail(du.getEmail().trim());
